@@ -1,0 +1,13 @@
+# BurnVision — Requirements Flask API
+# Install dengan: pip install -r requirements_flask.txt
+
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# Sudah ada di environment training kamu:
+# numpy
+# opencv-python
+# torch
+# segmentation-models-pytorch
+# albumentations
+# matplotlib

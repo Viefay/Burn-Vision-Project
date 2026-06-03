@@ -1,0 +1,26 @@
+@"
+# Dataset (terlalu besar untuk GitHub)
+DATASET/
+outputs/
+hasil/
+training_log.txt/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+"@ | Out-File -FilePath .gitignore -Encoding utf8

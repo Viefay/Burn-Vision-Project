@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BurnVision — Burn Wound Segmentation System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F4F6F9;
+    --surface: #FFFFFF;
+    --surface2: #F0F3F7;
+    --border: #DDE2EA;
+    --border-strong: #C4CDD8;
+    --text-primary: #0D1B2A;
+    --text-secondary: #4A5568;
+    --text-muted: #8A9BB0;
+    --accent: #0A6EBD;
+    --accent-light: #E8F3FC;
+    --accent-dark: #084E8A;
+    --success: #0E7C5B;
+    --success-light: #E6F6F1;
+    --warning: #B45309;
+    --warning-light: #FEF3E2;
+    --danger: #C0392B;
+    --danger-light: #FDECEA;
+    --sidebar-w: 280px;
+    --header-h: 64px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.10);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 20px; height: 20px; color: white; }
+  .logo-text { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; color: #E84A00; }
+  .logo-text span { color: var(--accent); }
+  .header-divider { width: 1px; height: 24px; background: var(--border); }
+  .header-meta { font-size: 12px; color: var(--text-muted); font-family: var(--mono); }
+
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+  .badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; font-family: var(--mono); }
+  .badge-blue { background: var(--accent-light); color: var(--accent); }
+  .badge-green { background: var(--success-light); color: var(--success); }
+  .badge-orange { background: var(--warning-light); color: var(--warning); }
+
+  /* Server status indicator */
+  .server-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .server-status:hover { border-color: var(--accent); color: var(--accent); }
+  .server-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); transition: background 0.3s; }
+  .server-dot.connected { background: var(--success); box-shadow: 0 0 0 2px var(--success-light); }
+  .server-dot.error { background: var(--danger); box-shadow: 0 0 0 2px var(--danger-light); }
+  .server-dot.checking { background: var(--accent); animation: pulse 1s ease infinite; }
+
+  .app-body { display: flex; flex: 1; height: calc(100vh - var(--header-h)); overflow: hidden; }
+
+  /* SIDEBAR */
+  aside {
+    width: var(--sidebar-w);
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .sidebar-section { padding: 20px 18px; border-bottom: 1px solid var(--border); }
+  .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px; }
+
+  .model-option {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .model-option:hover { border-color: var(--accent); background: var(--accent-light); }
+  .model-option.active { border-color: var(--accent); background: var(--accent-light); }
+  .model-option.active .model-dot { background: var(--accent); }
+  .model-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); flex-shrink: 0; transition: background 0.15s; }
+  .model-info { flex: 1; }
+  .model-name { font-size: 13px; font-weight: 500; }
+  .model-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+  .path-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; font-weight: 500; }
+  .path-field { display: flex; gap: 6px; margin-bottom: 8px; }
+  .path-input {
+    flex: 1;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0 10px;
+    font-size: 11px;
+    font-family: var(--mono);
+    background: var(--surface2);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .path-input:focus { border-color: var(--accent); background: white; }
+
+  /* Model file valid indicator */
+  .path-input.valid { border-color: var(--success); background: var(--success-light); }
+  .path-input.invalid { border-color: var(--danger); background: var(--danger-light); }
+
+  .btn-check {
+    height: 32px;
+    padding: 0 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .btn-check:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  .model-status {
+    font-size: 10px;
+    font-family: var(--mono);
+    padding: 4px 8px;
+    border-radius: 5px;
+    margin-top: 4px;
+    display: none;
+  }
+  .model-status.found { display: block; background: var(--success-light); color: var(--success); }
+  .model-status.notfound { display: block; background: var(--danger-light); color: var(--danger); }
+
+  .slider-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .slider-row input[type=range] { flex: 1; accent-color: var(--accent); }
+  .slider-val { font-size: 12px; font-family: var(--mono); color: var(--text-secondary); min-width: 32px; text-align: right; }
+
+  .legend-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
+  .legend-name { font-size: 12px; color: var(--text-secondary); }
+  .legend-code { font-size: 10px; font-family: var(--mono); color: var(--text-muted); margin-left: auto; }
+
+  .btn-run {
+    width: 100%;
+    height: 44px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+    font-family: var(--font);
+  }
+  .btn-run:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+  .btn-run:disabled { background: var(--border-strong); cursor: not-allowed; }
+  .btn-run svg { width: 18px; height: 18px; }
+  .btn-run.running { background: var(--warning); }
+
+  main { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+  .upload-zone {
+    background: var(--surface);
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .upload-zone:hover, .upload-zone.drag-over { border-color: var(--accent); background: var(--accent-light); }
+  .upload-icon { width: 56px; height: 56px; background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .upload-icon svg { width: 26px; height: 26px; color: var(--text-secondary); }
+  .upload-title { font-size: 16px; font-weight: 500; margin-bottom: 6px; }
+  .upload-sub { font-size: 13px; color: var(--text-muted); }
+  .upload-sub strong { color: var(--accent); font-weight: 500; }
+
+  #fileInput { display: none; }
+
+  .stats-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow); }
+  .stats-title { font-size: 13px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.3px; text-transform: uppercase; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface2); border-radius: var(--radius); padding: 14px; }
+  .stat-label { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 600; font-family: var(--mono); color: var(--text-primary); line-height: 1; }
+  .stat-unit { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+  .stat-card.highlight { background: var(--danger-light); }
+  .stat-card.highlight .stat-value { color: var(--danger); }
+
+  .breakdown-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .breakdown-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .breakdown-label { font-size: 12px; color: var(--text-secondary); width: 160px; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+  .breakdown-pct { font-size: 12px; font-family: var(--mono); color: var(--text-secondary); width: 40px; text-align: right; flex-shrink: 0; }
+
+  .tab-bar { display: flex; gap: 2px; background: var(--surface2); border-radius: var(--radius); padding: 3px; margin-bottom: 16px; }
+  .tab { flex: 1; height: 30px; border: none; background: transparent; border-radius: 7px; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+  .tab.active { background: var(--surface); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  .img-panel {
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #1a1a2e;
+    aspect-ratio: 16/9;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .img-panel img, .img-panel canvas { max-width: 100%; max-height: 400px; object-fit: contain; display: block; }
+
+  /* Progress bar */
+  .progress-bar {
+    height: 3px;
+    background: var(--accent-light);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 8px;
+    display: none;
+  }
+  .progress-bar.active { display: block; }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+
+  /* Loading overlay */
+  .loading-overlay {
+    position: absolute; inset: 0;
+    background: rgba(13,27,42,0.85);
+    display: none;
+    flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    border-radius: var(--radius);
+  }
+  .loading-overlay.active { display: flex; }
+  .spinner { width: 36px; height: 36px; border: 3px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 13px; color: rgba(255,255,255,0.7); font-weight: 500; }
+
+  /* Terminal */
+  .terminal {
+    background: #0D1B2A; border-radius: var(--radius);
+    padding: 14px 16px; font-family: var(--mono); font-size: 11px; color: #7FB3D3;
+    min-height: 120px; max-height: 220px; overflow-y: auto; line-height: 1.7;
+  }
+  .t-success { color: #4CAF7D; }
+  .t-warning { color: #F0A500; }
+  .t-error { color: #E03070; }
+  .t-dim { color: #3A5068; }
+  .t-white { color: #E0EAF4; }
+
+  /* Notice */
+  .notice {
+    background: var(--accent-light); border: 1px solid #BDD8F0;
+    border-radius: var(--radius); padding: 10px 14px;
+    font-size: 12px; color: var(--accent);
+    display: flex; gap: 8px; align-items: flex-start;
+    margin-top: 10px;
+  }
+  .notice.warn { background: var(--warning-light); border-color: #F5CBA7; color: var(--warning); }
+  .notice svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+
+  .status-bar {
+    padding: 0 18px; height: 36px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px; margin-top: auto;
+    background: var(--surface2);
+  }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 2px var(--success-light); }
+  .status-dot.idle { background: var(--text-muted); box-shadow: 0 0 0 2px var(--surface2); }
+  .status-dot.running { background: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); animation: pulse 1.2s ease infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .status-text { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
+
+  /* Device badge */
+  .device-badge {
+    font-size: 10px; font-family: var(--mono); padding: 2px 8px;
+    border-radius: 20px; margin-left: auto;
+  }
+  .device-badge.cuda { background: var(--success-light); color: var(--success); }
+  .device-badge.cpu { background: var(--surface2); color: var(--text-muted); }
+
+  @media (max-width: 900px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+  <img src="AppIcon.png" style="width:20px; height:20px; object-fit:contain;" />
+</div>
+    <span class="logo-text">Burn<span>Vision</span></span>
+  </div>
+  <div class="header-divider"></div>
+  <span class="header-meta">Burn Wound Segmentation System v1.0</span>
+  <div class="header-right">
+    <span class="badge badge-blue">7-Class</span>
+    <span class="badge badge-green">ResNet34 / DenseNet169</span>
+    <div class="server-status" id="serverStatus" onclick="checkHealth()" title="Klik untuk cek koneksi server">
+      <div class="server-dot checking" id="serverDot"></div>
+      <span id="serverLabel">Connecting...</span>
+    </div>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <aside>
+    <!-- Model selection -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Model</div>
+      <div class="model-option active" id="opt-unet" onclick="selectModel('unet')">
+        <div class="model-dot" id="dot-unet"></div>
+        <div class="model-info">
+          <div class="model-name">U-Net</div>
+          <div class="model-desc">Encoder: ResNet34</div>
+        </div>
+        <span class="badge badge-blue" style="font-size:10px;padding:2px 7px;">default</span>
+      </div>
+      <div class="model-option" id="opt-densenet" onclick="selectModel('densenet169_unet')">
+        <div class="model-dot" id="dot-densenet"></div>
+        <div class="model-info">
+          <div class="model-name">DenseNet169-UNet</div>
+          <div class="model-desc">Encoder: DenseNet169</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paths -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Model Weights</div>
+      <div class="path-label">Path ke file .pth</div>
+      <div class="path-field">
+        <input class="path-input" id="modelPath" type="text"
+               value="outputs/20726/unet/best_unet.pth"
+               placeholder="path/to/best_model.pth"
+               oninput="clearModelStatus()">
+        <button class="btn-check" onclick="checkModelFile()">Cek</button>
+      </div>
+      <div class="model-status" id="modelStatus"></div>
+
+      <div class="path-label" style="margin-top:12px">Output Directory</div>
+      <div class="path-field">
+        <input class="path-input" id="outputDir" type="text" value="hasil/" placeholder="output/folder/">
+      </div>
+    </div>
+
+    <!-- Image size -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Inference Settings</div>
+      <div class="path-label">Image Size (px)</div>
+      <div class="slider-row">
+        <input type="range" min="128" max="512" step="32" value="256" id="imgSize"
+               oninput="document.getElementById('imgSizeVal').textContent=this.value">
+        <span class="slider-val" id="imgSizeVal">256</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Lebih besar = lebih lambat, lebih detail</div>
+    </div>
+
+    <!-- Legend -->
+    <div class="sidebar-section">
+      <div class="sidebar-label">Kelas Segmentasi</div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#AEFCAE"></div>
+        <span class="legend-name">Normal</span><span class="legend-code">cls.0</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#F8BDC9"></div>
+        <span class="legend-name">Superficial</span><span class="legend-code">cls.1</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#FF007C"></div>
+        <span class="legend-name">Mid-Deep</span><span class="legend-code">cls.2</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-swatch" style="background:#FDFDFD;border:1px solid #ccc"></div>
+        <span class="legend-name">Full Thickness</span><span class="legend-code">cls.3</span>
+      </div>
+      <div class="legend-item" style="opacity:0.45">
+        <div class="legend-swatch" style="background:#F8F810;border-color:#ccc"></div>
+        <span class="legend-name">Medical Object</span><span class="legend-code">cls.4</span>
+      </div>
+      <div class="legend-item" style="opacity:0.45">
+        <div class="legend-swatch" style="background:#1BCEF0"></div>
+        <span class="legend-name">Tangan Pemeriksa</span><span class="legend-code">cls.5</span>
+      </div>
+      <div class="legend-item" style="opacity:0.45">
+        <div class="legend-swatch" style="background:#2323FA"></div>
+        <span class="legend-name">Background</span><span class="legend-code">cls.6</span>
+      </div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.5;">Kelas 4–6 diabaikan dalam evaluasi metrik</div>
+    </div>
+
+    <!-- Run button -->
+    <div class="sidebar-section" style="border-bottom:none">
+      <button class="btn-run" id="runBtn" onclick="runInference()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Jalankan Segmentasi
+      </button>
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      </div>
+
+      <div class="notice" id="serverNotice" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span id="serverNoticeText">Server tidak terhubung. Jalankan <code style="font-family:var(--mono);font-size:10px">python app.py</code> terlebih dahulu.</span>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot idle" id="statusDot"></div>
+      <span class="status-text" id="statusText">Idle — menunggu input</span>
+      <span class="device-badge cpu" id="deviceBadge" style="display:none"></span>
+    </div>
+  </aside>
+
+  <main id="mainArea">
+
+    <!-- Upload zone -->
+    <div id="uploadSection">
+      <div class="upload-zone" id="uploadZone"
+           onclick="document.getElementById('fileInput').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event)">
+        <div class="upload-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <p class="upload-title">Upload Foto Luka Bakar</p>
+        <p class="upload-sub">Drag &amp; drop, atau <strong>klik untuk pilih file</strong></p>
+        <p class="upload-sub" style="margin-top:6px;font-size:11px">JPG, JPEG, PNG — maks. 50MB</p>
+        <input type="file" id="fileInput" accept="image/*" onchange="handleFile(this)">
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" style="display:none">
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);">
+        <div class="tab-bar">
+          <button class="tab active" onclick="switchTab('preview')">Preview Input</button>
+          <button class="tab" onclick="switchTab('segmentation')">Segmentation Map</button>
+          <button class="tab" onclick="switchTab('overlay')">Overlay</button>
+        </div>
+
+        <!-- Preview -->
+        <div id="tab-preview" class="tab-content">
+          <div class="img-panel">
+            <img id="previewImg" src="" alt="Input">
+          </div>
+        </div>
+
+        <!-- Segmentation Map -->
+        <div id="tab-segmentation" class="tab-content" style="display:none">
+          <div class="img-panel">
+            <img id="segImg" src="" alt="Segmentation" style="display:none">
+            <div class="loading-overlay active" id="segLoading">
+              <div class="spinner"></div>
+              <div class="loading-text" id="segLoadingText">Menunggu inferensi...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overlay -->
+        <div id="tab-overlay" class="tab-content" style="display:none">
+          <div class="img-panel">
+            <img id="overlayImg" src="" alt="Overlay" style="display:none">
+            <div class="loading-overlay active" id="overlayLoading">
+              <div class="spinner"></div>
+              <div class="loading-text">Menunggu inferensi...</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">
+          <div style="font-size:11px;color:var(--text-muted);font-family:var(--mono)" id="imgMeta">—</div>
+          <button onclick="resetUpload()" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;font-family:var(--font);padding:4px 8px;border-radius:5px;" onmouseover="this.style.background='var(--accent-light)'" onmouseout="this.style.background='none'">
+            Ganti Gambar
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-panel" id="statsPanel" style="display:none">
+        <div class="stats-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Analisis Segmentasi
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Total Piksel</div>
+            <div class="stat-value" id="statTotal">—</div>
+            <div class="stat-unit">piksel</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Area Kulit</div>
+            <div class="stat-value" id="statSkin">—</div>
+            <div class="stat-unit">piksel evaluasi</div>
+          </div>
+          <div class="stat-card highlight">
+            <div class="stat-label">Total Luka</div>
+            <div class="stat-value" id="statWound">—</div>
+            <div class="stat-unit">% dari area kulit</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Kelas Dominan</div>
+            <div class="stat-value" style="font-size:14px;line-height:1.4" id="statDominant">—</div>
+            <div class="stat-unit" id="statDominantPct">—</div>
+          </div>
+        </div>
+
+        <div class="breakdown-title">Distribusi Kelas Luka</div>
+        <div class="breakdown-row">
+          <div class="breakdown-label">Normal (cls.0)</div>
+          <div class="bar-track"><div class="bar-fill" id="bar0" style="width:0%;background:#4CAF7D"></div></div>
+          <div class="breakdown-pct" id="pct0">0%</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-label">Superficial (cls.1)</div>
+          <div class="bar-track"><div class="bar-fill" id="bar1" style="width:0%;background:#E8A0B4"></div></div>
+          <div class="breakdown-pct" id="pct1">0%</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-label">Mid-Deep (cls.2)</div>
+          <div class="bar-track"><div class="bar-fill" id="bar2" style="width:0%;background:#E03070"></div></div>
+          <div class="breakdown-pct" id="pct2">0%</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-label">Full Thickness (cls.3)</div>
+          <div class="bar-track"><div class="bar-fill" id="bar3" style="width:0%;background:#AAAAAA"></div></div>
+          <div class="breakdown-pct" id="pct3">0%</div>
+        </div>
+      </div>
+
+      <!-- Terminal log -->
+      <div class="stats-panel">
+        <div class="stats-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+          Log Output
+        </div>
+        <div class="terminal" id="terminal">
+          <span class="t-dim">$ BurnVision v1.0 — terhubung ke Flask API</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  const API_BASE = 'http://localhost:5000';
+  let selectedModel = 'unet';
+  let uploadedFile  = null;
+  let imageLoaded   = false;
+  let serverOnline  = false;
+
+  // ── Server health check ─────────────────────────────────────────────────
+  async function checkHealth() {
+    setServerStatus('checking', 'Checking...');
+    try {
+      const res  = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(3000) });
+      const data = await res.json();
+      serverOnline = true;
+
+      const deviceText = data.cuda_available
+        ? `GPU: ${data.gpu_name || 'CUDA'}`
+        : 'CPU mode';
+      setServerStatus('connected', deviceText);
+
+      // Update device badge
+      const badge = document.getElementById('deviceBadge');
+      badge.textContent = data.cuda_available ? '⚡ CUDA' : '🖥 CPU';
+      badge.className   = 'device-badge ' + (data.cuda_available ? 'cuda' : 'cpu');
+      badge.style.display = 'block';
+
+      document.getElementById('serverNotice').style.display = 'none';
+
+      if (!data.ml_available) {
+        log('t-warning', '⚠ ML libraries tidak tersedia — akan berjalan dalam mode simulasi');
+      } else {
+        log('t-success', `✓ Server online | Device: ${data.cuda_available ? 'CUDA' : 'CPU'}`);
+      }
+    } catch {
+      serverOnline = false;
+      setServerStatus('error', 'Offline');
+      document.getElementById('serverNotice').style.display = 'flex';
+      log('t-error', '✗ Server tidak dapat dijangkau — jalankan: python app.py');
+    }
+  }
+
+  function setServerStatus(state, label) {
+    const dot = document.getElementById('serverDot');
+    dot.className = 'server-dot ' + state;
+    document.getElementById('serverLabel').textContent = label;
+  }
+
+  // ── Model selection ─────────────────────────────────────────────────────
+  function selectModel(m) {
+    selectedModel = m;
+    document.getElementById('opt-unet').classList.toggle('active', m === 'unet');
+    document.getElementById('opt-densenet').classList.toggle('active', m === 'densenet169_unet');
+    const path = m === 'unet'
+      ? 'outputs/20726/unet/best_unet.pth'
+      : 'outputs/20726/densenet169_unet/best_densenet169_unet.pth';
+    document.getElementById('modelPath').value = path;
+    clearModelStatus();
+  }
+
+  async function checkModelFile() {
+    const path   = document.getElementById('modelPath').value.trim();
+    const status = document.getElementById('modelStatus');
+    if (!path) { status.textContent = 'Masukkan path terlebih dahulu'; status.className = 'model-status notfound'; return; }
+
+    status.textContent = 'Mengecek...';
+    status.className   = 'model-status found';
+
+    try {
+      const res  = await fetch(`${API_BASE}/api/check_model`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model_path: path }),
+        signal: AbortSignal.timeout(3000),
+      });
+      const data = await res.json();
+      if (data.exists) {
+        status.textContent = `✓ Ditemukan (${data.size_mb} MB)`;
+        status.className   = 'model-status found';
+        document.getElementById('modelPath').classList.add('valid');
+        document.getElementById('modelPath').classList.remove('invalid');
+      } else {
+        status.textContent = `✗ File tidak ditemukan`;
+        status.className   = 'model-status notfound';
+        document.getElementById('modelPath').classList.add('invalid');
+        document.getElementById('modelPath').classList.remove('valid');
+      }
+    } catch {
+      status.textContent = '✗ Tidak dapat cek (server offline?)';
+      status.className   = 'model-status notfound';
+    }
+  }
+
+  function clearModelStatus() {
+    document.getElementById('modelStatus').className = 'model-status';
+    document.getElementById('modelPath').classList.remove('valid', 'invalid');
+  }
+
+  // ── File handling ───────────────────────────────────────────────────────
+  function handleDrop(e) {
+    e.preventDefault();
+    document.getElementById('uploadZone').classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) processFile(f);
+  }
+
+  function handleFile(input) {
+    if (input.files[0]) processFile(input.files[0]);
+  }
+
+  function processFile(file) {
+    uploadedFile = file;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('previewImg').src = e.target.result;
+      const img = new Image();
+      img.onload = function() {
+        document.getElementById('imgMeta').textContent =
+          file.name + ' · ' + img.width + '×' + img.height + ' · ' + (file.size/1024).toFixed(1) + ' KB';
+        imageLoaded = true;
+      };
+      img.src = e.target.result;
+
+      // Show results section
+      document.getElementById('uploadSection').style.display = 'none';
+      document.getElementById('resultsSection').style.display = 'block';
+      document.getElementById('statsPanel').style.display = 'none';
+
+      // Reset result images
+      document.getElementById('segImg').style.display = 'none';
+      document.getElementById('overlayImg').style.display = 'none';
+      document.getElementById('segLoading').classList.add('active');
+      document.getElementById('overlayLoading').classList.add('active');
+      document.getElementById('segLoadingText').textContent = 'Menunggu inferensi...';
+
+      setStatus('running', 'Gambar dimuat — klik Jalankan Segmentasi');
+      log('t-success', '✓ Gambar dimuat: ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function resetUpload() {
+    uploadedFile  = null;
+    imageLoaded   = false;
+    document.getElementById('uploadSection').style.display = 'block';
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+    setStatus('idle', 'Idle — menunggu input');
+  }
+
+  // ── Main inference ──────────────────────────────────────────────────────
+  async function runInference() {
+    if (!imageLoaded || !uploadedFile) {
+      log('t-error', '✗ Upload gambar terlebih dahulu');
+      return;
+    }
+
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width:18px;height:18px;border-width:2px;margin-right:8px"></div>Memproses...';
+    btn.classList.add('running');
+
+    const progressBar  = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
+    progressBar.classList.add('active');
+
+    document.getElementById('segLoadingText').textContent = 'Menjalankan inferensi...';
+    setStatus('running', 'Menjalankan inferensi...');
+
+    // Animate progress bar
+    let prog = 0;
+    const progIv = setInterval(() => {
+      prog = Math.min(prog + Math.random() * 8, 85);
+      progressFill.style.width = prog + '%';
+    }, 300);
+
+    try {
+      const formData = new FormData();
+      formData.append('image',      uploadedFile);
+      formData.append('model_type', selectedModel);
+      formData.append('model_path', document.getElementById('modelPath').value);
+      formData.append('img_size',   document.getElementById('imgSize').value);
+      formData.append('output_dir', document.getElementById('outputDir').value);
+
+      const res  = await fetch(`${API_BASE}/api/predict`, {
+        method: 'POST',
+        body:   formData,
+      });
+      const data = await res.json();
+
+      clearInterval(progIv);
+      progressFill.style.width = '100%';
+
+      if (!data.success) {
+        throw new Error(data.error || 'Inferensi gagal');
+      }
+
+      // Print logs from server
+      if (data.log) {
+        data.log.forEach(entry => log('t-' + entry.type, entry.msg));
+      }
+
+      // Show segmentation & overlay images
+      const segImg     = document.getElementById('segImg');
+      const overlayImg = document.getElementById('overlayImg');
+
+      segImg.src     = 'data:image/png;base64,' + data.seg_map_b64;
+      overlayImg.src = 'data:image/png;base64,' + data.overlay_b64;
+
+      segImg.style.display     = 'block';
+      overlayImg.style.display = 'block';
+      document.getElementById('segLoading').classList.remove('active');
+      document.getElementById('overlayLoading').classList.remove('active');
+
+      // Update stats
+      renderStats(data.stats);
+
+      setStatus('ready', 'Selesai — ' + new Date().toLocaleTimeString('id-ID'));
+      switchTab('segmentation');
+
+    } catch (err) {
+      clearInterval(progIv);
+      progressFill.style.width = '0%';
+      log('t-error', '✗ Error: ' + err.message);
+
+      if (!serverOnline || err.message.includes('fetch')) {
+        log('t-error', '  Server tidak dapat dijangkau. Jalankan: python app.py');
+        document.getElementById('serverNotice').style.display = 'flex';
+        setServerStatus('error', 'Offline');
+      }
+      setStatus('idle', 'Error — lihat log');
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('running');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>Jalankan Segmentasi`;
+      setTimeout(() => {
+        progressBar.classList.remove('active');
+        progressFill.style.width = '0%';
+      }, 1000);
+    }
+  }
+
+  function renderStats(stats) {
+    document.getElementById('statsPanel').style.display = 'block';
+    document.getElementById('statTotal').textContent = stats.total_pixels.toLocaleString();
+    document.getElementById('statSkin').textContent  = stats.evaluable_skin_pixels.toLocaleString();
+    document.getElementById('statWound').textContent = stats.wound_pct_of_skin + '%';
+
+    const evalCls = stats.per_class.slice(0, 4);
+    const dominant = [...evalCls].sort((a, b) => b.pixels - a.pixels)[0];
+    document.getElementById('statDominant').textContent    = dominant.name.replace('_', ' ');
+    document.getElementById('statDominantPct').textContent = dominant.pct + '%';
+
+    evalCls.forEach((cls, i) => {
+      document.getElementById('pct' + i).textContent  = cls.pct + '%';
+      document.getElementById('bar' + i).style.width  = cls.pct + '%';
+    });
+  }
+
+  // ── UI helpers ──────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    const tabs = ['preview', 'segmentation', 'overlay'];
+    document.querySelectorAll('.tab').forEach((b, i) => b.classList.toggle('active', tabs[i] === tab));
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.getElementById('tab-' + tab).style.display = 'block';
+  }
+
+  function log(cls, msg) {
+    const t = document.getElementById('terminal');
+    t.innerHTML += '\n<span class="' + cls + '">' + msg + '</span>';
+    t.scrollTop = t.scrollHeight;
+  }
+
+  function setStatus(state, msg) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot ' + (state === 'running' ? 'running' : state === 'ready' ? '' : 'idle');
+    document.getElementById('statusText').textContent = msg;
+  }
+
+  // ── Init ────────────────────────────────────────────────────────────────
+  checkHealth();
+</script>
+</body>
+</html>

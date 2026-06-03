@@ -1,0 +1,35 @@
+# ============================================================
+# INSTALL PyTorch FIRST (choose one):
+#
+# CPU (lokal/tanpa GPU):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#
+# CUDA 12.1 (cloud GPU):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+#
+# CUDA 11.8 (cloud GPU alternatif):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+# ============================================================
+
+# Deep learning & segmentation
+segmentation-models-pytorch>=0.3.3
+
+# Image augmentation
+albumentations>=1.3.0
+
+# Image processing
+# Use opencv-python-headless on cloud/server (no GUI)
+opencv-python>=4.7.0
+
+# Data handling
+scikit-learn>=1.3.0
+pandas>=2.0.0
+openpyxl>=3.1.0
+
+# Visualization
+matplotlib>=3.7.0
+
+# Utilities
+tqdm>=4.65.0
+Pillow>=10.0.0
+numpy>=1.24.0
