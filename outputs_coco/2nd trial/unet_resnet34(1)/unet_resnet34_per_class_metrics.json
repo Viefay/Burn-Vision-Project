@@ -1,0 +1,21 @@
+{
+  "num_classes": 6,
+  "dice_per_class": {
+    "normal": 0.7956934243523504,
+    "superficial_thickness": 0.10275858318748371,
+    "mid_deep_thickness": 0.47416859335425987,
+    "full_thickness": 0.5106402319417426,
+    "occlusion": 0.49863708995205663,
+    "background": 0.9142740184727544
+  },
+  "iou_per_class": {
+    "normal": 0.6607067008036918,
+    "superficial_thickness": 0.054162102027123425,
+    "mid_deep_thickness": 0.310760803119548,
+    "full_thickness": 0.3428588866795336,
+    "occlusion": 0.3321229574907599,
+    "background": 0.8420854193676779
+  },
+  "dice_mean": 0.5493619902101079,
+  "iou_mean": 0.4237828115813891
+}

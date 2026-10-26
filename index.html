@@ -335,9 +335,63 @@
   .device-badge.cuda { background: var(--success-light); color: var(--success); }
   .device-badge.cpu { background: var(--surface2); color: var(--text-muted); }
 
-  @media (max-width: 900px) {
-    .stats-grid { grid-template-columns: 1fr 1fr; }
+  /* Compare all grid */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
   }
+  .compare-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .compare-card:hover { border-color: var(--accent); box-shadow: var(--shadow-lg); }
+  .compare-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-light); }
+  .compare-card-header {
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .compare-card-img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #1a1a2e; }
+  .compare-card-stats { padding: 8px 10px; font-size: 11px; font-family: var(--mono); }
+  .compare-card-wound { font-size: 16px; font-weight: 700; color: var(--danger); line-height: 1; }
+  .compare-card-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+  .compare-detail { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow); display: none; }
+  .compare-detail.active { display: block; }
+
+  .btn-compare {
+    width: 100%;
+    height: 38px;
+    background: var(--surface2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-top: 8px;
+    transition: all 0.2s;
+    font-family: var(--font);
+  }
+  .btn-compare:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .btn-compare:disabled { opacity: 0.4; cursor: not-allowed; }
+  .sim-badge { font-size: 9px; padding: 1px 5px; border-radius: 10px; background: var(--warning-light); color: var(--warning); font-family: var(--mono); }
+
+  @media (max-width: 1100px) { .compare-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 900px)  { .stats-grid { grid-template-columns: 1fr 1fr; } .compare-grid { grid-template-columns: 1fr 1fr; } }
 </style>
 </head>
 <body>
@@ -352,8 +406,8 @@
   <div class="header-divider"></div>
   <span class="header-meta">Burn Wound Segmentation System v1.0</span>
   <div class="header-right">
-    <span class="badge badge-blue">7-Class</span>
-    <span class="badge badge-green">ResNet34 / DenseNet169</span>
+    <span class="badge badge-blue">6-Class</span>
+    <span class="badge badge-green">U-Net · UNet++ · DeepLabV3+</span>
     <div class="server-status" id="serverStatus" onclick="checkHealth()" title="Klik untuk cek koneksi server">
       <div class="server-dot checking" id="serverDot"></div>
       <span id="serverLabel">Connecting...</span>
@@ -367,19 +421,39 @@
     <!-- Model selection -->
     <div class="sidebar-section">
       <div class="sidebar-label">Model</div>
-      <div class="model-option active" id="opt-unet" onclick="selectModel('unet')">
-        <div class="model-dot" id="dot-unet"></div>
+      <div class="model-option active" id="opt-unet_resnet34" onclick="selectModel('unet_resnet34')">
+        <div class="model-dot" id="dot-unet_resnet34"></div>
         <div class="model-info">
-          <div class="model-name">U-Net</div>
+          <div class="model-name">U-Net ResNet34</div>
           <div class="model-desc">Encoder: ResNet34</div>
         </div>
-        <span class="badge badge-blue" style="font-size:10px;padding:2px 7px;">default</span>
       </div>
-      <div class="model-option" id="opt-densenet" onclick="selectModel('densenet169_unet')">
-        <div class="model-dot" id="dot-densenet"></div>
+      <div class="model-option" id="opt-unet_densenet169" onclick="selectModel('unet_densenet169')">
+        <div class="model-dot" id="dot-unet_densenet169"></div>
         <div class="model-info">
-          <div class="model-name">DenseNet169-UNet</div>
+          <div class="model-name">U-Net DenseNet169</div>
           <div class="model-desc">Encoder: DenseNet169</div>
+        </div>
+      </div>
+      <div class="model-option" id="opt-unet_efficientb4" onclick="selectModel('unet_efficientb4')">
+        <div class="model-dot" id="dot-unet_efficientb4"></div>
+        <div class="model-info">
+          <div class="model-name">U-Net EfficientB4</div>
+          <div class="model-desc">Encoder: EfficientNet-B4</div>
+        </div>
+      </div>
+      <div class="model-option" id="opt-unetpp_efficientb4" onclick="selectModel('unetpp_efficientb4')">
+        <div class="model-dot" id="dot-unetpp_efficientb4"></div>
+        <div class="model-info">
+          <div class="model-name">UNet++ EfficientB4</div>
+          <div class="model-desc">Encoder: EfficientNet-B4</div>
+        </div>
+      </div>
+      <div class="model-option" id="opt-deeplabv3p_effb4" onclick="selectModel('deeplabv3p_effb4')">
+        <div class="model-dot" id="dot-deeplabv3p_effb4"></div>
+        <div class="model-info">
+          <div class="model-name">DeepLabV3+ EfficientB4</div>
+          <div class="model-desc">Encoder: EfficientNet-B4</div>
         </div>
       </div>
     </div>
@@ -390,7 +464,7 @@
       <div class="path-label">Path ke file .pth</div>
       <div class="path-field">
         <input class="path-input" id="modelPath" type="text"
-               value="outputs/20726/unet/best_unet.pth"
+               value="outputs_coco/unet_resnet34/best_unet_resnet34.pth"
                placeholder="path/to/best_model.pth"
                oninput="clearModelStatus()">
         <button class="btn-check" onclick="checkModelFile()">Cek</button>
@@ -408,9 +482,9 @@
       <div class="sidebar-label">Inference Settings</div>
       <div class="path-label">Image Size (px)</div>
       <div class="slider-row">
-        <input type="range" min="128" max="512" step="32" value="256" id="imgSize"
+        <input type="range" min="128" max="512" step="32" value="384" id="imgSize"
                oninput="document.getElementById('imgSizeVal').textContent=this.value">
-        <span class="slider-val" id="imgSizeVal">256</span>
+        <span class="slider-val" id="imgSizeVal">384</span>
       </div>
       <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">Lebih besar = lebih lambat, lebih detail</div>
     </div>
@@ -436,17 +510,13 @@
       </div>
       <div class="legend-item" style="opacity:0.45">
         <div class="legend-swatch" style="background:#F8F810;border-color:#ccc"></div>
-        <span class="legend-name">Medical Object</span><span class="legend-code">cls.4</span>
-      </div>
-      <div class="legend-item" style="opacity:0.45">
-        <div class="legend-swatch" style="background:#1BCEF0"></div>
-        <span class="legend-name">Tangan Pemeriksa</span><span class="legend-code">cls.5</span>
+        <span class="legend-name">Occlusion</span><span class="legend-code">cls.4</span>
       </div>
       <div class="legend-item" style="opacity:0.45">
         <div class="legend-swatch" style="background:#2323FA"></div>
-        <span class="legend-name">Background</span><span class="legend-code">cls.6</span>
+        <span class="legend-name">Background</span><span class="legend-code">cls.5</span>
       </div>
-      <div style="font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.5;">Kelas 4–6 diabaikan dalam evaluasi metrik</div>
+      <div style="font-size:10px;color:var(--text-muted);margin-top:8px;line-height:1.5;">Kelas 4–5 diabaikan dalam evaluasi metrik</div>
     </div>
 
     <!-- Run button -->
@@ -460,6 +530,14 @@
       <div class="progress-bar" id="progressBar">
         <div class="progress-fill" id="progressFill" style="width:0%"></div>
       </div>
+
+      <button class="btn-compare" id="compareBtn" onclick="runCompareAll()" disabled>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+        Bandingkan Semua Model
+      </button>
 
       <div class="notice" id="serverNotice" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -615,12 +693,62 @@
       </div>
 
     </div>
+    <!-- Comparison Section -->
+    <div id="comparisonSection" style="display:none">
+
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow);">
+        <div class="stats-title" style="margin-bottom:12px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+          </svg>
+          Perbandingan 5 Model
+          <span style="font-size:10px;font-weight:400;color:var(--text-muted);margin-left:4px">Klik kartu untuk lihat detail</span>
+        </div>
+
+        <div class="compare-grid" id="compareGrid">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Detail panel for selected model -->
+      <div class="compare-detail" id="compareDetail">
+        <div class="tab-bar">
+          <button class="tab active" onclick="switchCompareTab('overlay')">Overlay</button>
+          <button class="tab" onclick="switchCompareTab('seg')">Segmentation Map</button>
+        </div>
+        <div id="ctab-overlay">
+          <div class="img-panel"><img id="compareOverlayImg" src="" alt="Overlay"></div>
+        </div>
+        <div id="ctab-seg" style="display:none">
+          <div class="img-panel"><img id="compareSegImg" src="" alt="Seg"></div>
+        </div>
+        <div class="stats-grid" style="margin-top:14px" id="compareStatsGrid"></div>
+        <div style="margin-top:14px">
+          <div class="breakdown-title">Distribusi Kelas Luka</div>
+          <div id="compareBreakdown"></div>
+        </div>
+      </div>
+
+      <!-- Wound % comparison table -->
+      <div class="stats-panel" id="compareTablePanel" style="display:none">
+        <div class="stats-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Ringkasan Perbandingan — Wound Area (% of skin)
+        </div>
+        <div id="compareTable"></div>
+      </div>
+
+    </div>
+
   </main>
 </div>
 
 <script>
   const API_BASE = 'http://localhost:5000';
-  let selectedModel = 'unet';
+  let selectedModel = 'unet_resnet34';
   let uploadedFile  = null;
   let imageLoaded   = false;
   let serverOnline  = false;
@@ -666,14 +794,21 @@
   }
 
   // ── Model selection ─────────────────────────────────────────────────────
+  const MODEL_PATHS = {
+    'unet_resnet34':      'outputs_coco/unet_resnet34/best_unet_resnet34.pth',
+    'unet_densenet169':   'outputs_coco/unet_densenet169/best_unet_densenet169.pth',
+    'unet_efficientb4':   'outputs_coco/unet_efficientb4/best_unet_efficientb4.pth',
+    'unetpp_efficientb4': 'outputs_coco/unetpp_efficientb4/best_unetpp_efficientb4.pth',
+    'deeplabv3p_effb4':   'outputs_coco/deeplabv3p_effb4/best_deeplabv3p_effb4.pth',
+  };
+  const MODEL_KEYS = Object.keys(MODEL_PATHS);
+
   function selectModel(m) {
     selectedModel = m;
-    document.getElementById('opt-unet').classList.toggle('active', m === 'unet');
-    document.getElementById('opt-densenet').classList.toggle('active', m === 'densenet169_unet');
-    const path = m === 'unet'
-      ? 'outputs/20726/unet/best_unet.pth'
-      : 'outputs/20726/densenet169_unet/best_densenet169_unet.pth';
-    document.getElementById('modelPath').value = path;
+    MODEL_KEYS.forEach(k => {
+      document.getElementById('opt-' + k).classList.toggle('active', k === m);
+    });
+    document.getElementById('modelPath').value = MODEL_PATHS[m] || '';
     clearModelStatus();
   }
 
@@ -752,6 +887,8 @@
       document.getElementById('overlayLoading').classList.add('active');
       document.getElementById('segLoadingText').textContent = 'Menunggu inferensi...';
 
+      document.getElementById('compareBtn').disabled = false;
+      document.getElementById('comparisonSection').style.display = 'none';
       setStatus('running', 'Gambar dimuat — klik Jalankan Segmentasi');
       log('t-success', '✓ Gambar dimuat: ' + file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)');
     };
@@ -761,8 +898,11 @@
   function resetUpload() {
     uploadedFile  = null;
     imageLoaded   = false;
+    compareResults = {};
     document.getElementById('uploadSection').style.display = 'block';
     document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('comparisonSection').style.display = 'none';
+    document.getElementById('compareBtn').disabled = true;
     document.getElementById('fileInput').value = '';
     setStatus('idle', 'Idle — menunggu input');
   }
@@ -894,6 +1034,141 @@
     const dot = document.getElementById('statusDot');
     dot.className = 'status-dot ' + (state === 'running' ? 'running' : state === 'ready' ? '' : 'idle');
     document.getElementById('statusText').textContent = msg;
+  }
+
+  // ── Compare All ─────────────────────────────────────────────────────────
+  const MODEL_LABELS = {
+    'unet_resnet34':      'U-Net ResNet34',
+    'unet_densenet169':   'U-Net DenseNet169',
+    'unet_efficientb4':   'U-Net EfficientB4',
+    'unetpp_efficientb4': 'UNet++ EfficientB4',
+    'deeplabv3p_effb4':   'DeepLabV3+ EffB4',
+  };
+
+  let compareResults = {};
+
+  async function runCompareAll() {
+    if (!imageLoaded || !uploadedFile) {
+      log('t-error', '✗ Upload gambar terlebih dahulu');
+      return;
+    }
+
+    const btn = document.getElementById('compareBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div>&nbsp;Memproses 5 model...';
+
+    document.getElementById('comparisonSection').style.display = 'block';
+    document.getElementById('compareGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);font-size:13px">Menjalankan inferensi pada 5 model...</div>';
+    document.getElementById('compareDetail').classList.remove('active');
+    document.getElementById('compareTablePanel').style.display = 'none';
+
+    setStatus('running', 'Membandingkan 5 model...');
+    log('t-info', '$ predict_all — menjalankan 5 model sekaligus');
+
+    try {
+      const formData = new FormData();
+      formData.append('image',    uploadedFile);
+      formData.append('img_size', document.getElementById('imgSize').value);
+
+      const res  = await fetch(`${API_BASE}/api/predict_all`, { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (!data.success) throw new Error(data.error || 'Gagal');
+
+      compareResults = data.results;
+      log('t-success', `✓ Selesai — ${data.orig_size} | device: ${data.device}`);
+
+      renderCompareGrid(data.results);
+      renderCompareTable(data.results);
+      setStatus('ready', 'Perbandingan selesai — ' + new Date().toLocaleTimeString('id-ID'));
+
+    } catch (err) {
+      log('t-error', '✗ ' + err.message);
+      document.getElementById('compareGrid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--danger)">${err.message}</div>`;
+      setStatus('idle', 'Error');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Bandingkan Semua Model';
+    }
+  }
+
+  function renderCompareGrid(results) {
+    const grid = document.getElementById('compareGrid');
+    grid.innerHTML = '';
+    Object.entries(results).forEach(([key, r]) => {
+      const wound = r.stats.wound_pct_of_skin;
+      const sim   = r.simulated ? '<span class="sim-badge">sim</span>' : '';
+      const card  = document.createElement('div');
+      card.className = 'compare-card';
+      card.id        = `ccard-${key}`;
+      card.onclick   = () => selectCompareModel(key);
+      card.innerHTML = `
+        <div class="compare-card-header">
+          <span>${MODEL_LABELS[key] || key}</span>${sim}
+        </div>
+        <img class="compare-card-img" src="data:image/png;base64,${r.overlay_b64}" alt="${key}">
+        <div class="compare-card-stats">
+          <div class="compare-card-wound">${wound}%</div>
+          <div class="compare-card-label">wound of skin</div>
+        </div>`;
+      grid.appendChild(card);
+    });
+  }
+
+  function selectCompareModel(key) {
+    document.querySelectorAll('.compare-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`ccard-${key}`).classList.add('selected');
+
+    const r      = compareResults[key];
+    const detail = document.getElementById('compareDetail');
+    detail.classList.add('active');
+
+    document.getElementById('compareOverlayImg').src = 'data:image/png;base64,' + r.overlay_b64;
+    document.getElementById('compareSegImg').src     = 'data:image/png;base64,' + r.seg_map_b64;
+    switchCompareTab('overlay');
+
+    const sgEl = document.getElementById('compareStatsGrid');
+    sgEl.innerHTML = `
+      <div class="stat-card"><div class="stat-label">Total Piksel</div><div class="stat-value">${r.stats.total_pixels.toLocaleString()}</div><div class="stat-unit">piksel</div></div>
+      <div class="stat-card"><div class="stat-label">Area Kulit</div><div class="stat-value">${r.stats.evaluable_skin_pixels.toLocaleString()}</div><div class="stat-unit">piksel evaluasi</div></div>
+      <div class="stat-card highlight"><div class="stat-label">Total Luka</div><div class="stat-value">${r.stats.wound_pct_of_skin}%</div><div class="stat-unit">dari area kulit</div></div>
+      <div class="stat-card"><div class="stat-label">Model</div><div class="stat-value" style="font-size:13px;line-height:1.4">${MODEL_LABELS[key] || key}</div><div class="stat-unit">${r.arch} · ${r.encoder}</div></div>
+    `;
+
+    const COLOR_MAP = ['#4CAF7D', '#E8A0B4', '#E03070', '#AAAAAA', '#F8F810', '#2323FA'];
+    const brEl = document.getElementById('compareBreakdown');
+    brEl.innerHTML = r.stats.per_class.slice(0, 4).map((cls, i) => `
+      <div class="breakdown-row">
+        <div class="breakdown-label">${cls.name.replace(/_/g, ' ')} (cls.${cls.class})</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${cls.pct}%;background:${COLOR_MAP[i]}"></div></div>
+        <div class="breakdown-pct">${cls.pct}%</div>
+      </div>`).join('');
+
+    detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function switchCompareTab(tab) {
+    document.querySelectorAll('#compareDetail .tab').forEach((b, i) =>
+      b.classList.toggle('active', ['overlay','seg'][i] === tab));
+    document.getElementById('ctab-overlay').style.display = tab === 'overlay' ? 'block' : 'none';
+    document.getElementById('ctab-seg').style.display     = tab === 'seg'     ? 'block' : 'none';
+  }
+
+  function renderCompareTable(results) {
+    const panel = document.getElementById('compareTablePanel');
+    panel.style.display = 'block';
+    const tbl = document.getElementById('compareTable');
+    const rows = Object.entries(results)
+      .sort((a, b) => b[1].stats.wound_pct_of_skin - a[1].stats.wound_pct_of_skin)
+      .map(([key, r]) => {
+        const w = r.stats.wound_pct_of_skin;
+        return `<div class="breakdown-row">
+          <div class="breakdown-label" style="width:180px">${MODEL_LABELS[key] || key}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${Math.min(w,100)}%;background:var(--danger)"></div></div>
+          <div class="breakdown-pct">${w}%</div>
+        </div>`;
+      }).join('');
+    tbl.innerHTML = rows;
   }
 
   // ── Init ────────────────────────────────────────────────────────────────

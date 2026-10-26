@@ -1,0 +1,69 @@
+{
+  "run_name": "unet_resnet34",
+  "arch_name": "Unet",
+  "encoder_name": "resnet34",
+  "training_start": "2026-06-15T12:23:44.731406",
+  "hyperparameters": {
+    "img_size": 384,
+    "batch_size": 16,
+    "num_epochs_planned": 350,
+    "initial_lr": 0.0001,
+    "weight_decay": 0.0005,
+    "grad_clip": 1.0,
+    "label_smoothing": 0.1,
+    "early_stop_patience": 50,
+    "seed": 42
+  },
+  "loss_weights": {
+    "focal": 0.4,
+    "ce": 0.33,
+    "dice": 0.4,
+    "focal_gamma": 2.0
+  },
+  "transfer_learning": {
+    "encoder_pretrained": "imagenet",
+    "freeze_epochs": 30,
+    "frozen_lr": 0.0001,
+    "unfreeze_lr_factor": 0.1,
+    "total_params_M": 24.44,
+    "encoder_params_M": 21.28,
+    "decoder_params_M": 3.15,
+    "decoder_dropout": 0.2
+  },
+  "data": {
+    "num_train_images": 135,
+    "num_val_images": 34,
+    "train_patients": [
+      "12Okt_Sam",
+      "13Okt_SA",
+      "14Okt_U",
+      "17Des_FR",
+      "18Des_K",
+      "19Des_L",
+      "1Okt_AS",
+      "21Okt_SHart",
+      "2Okt_AA",
+      "3Okt_AL",
+      "4Okt_CAU",
+      "5Okt_E",
+      "6Okt_EM",
+      "8Okt_Mar",
+      "9Okt_Mas"
+    ],
+    "val_patients": [
+      "10Okt_MRH",
+      "11Okt_MR",
+      "7Okt_H"
+    ],
+    "num_classes": 6,
+    "class_names": [
+      "normal",
+      "superficial_thickness",
+      "mid_deep_thickness",
+      "full_thickness",
+      "occlusion",
+      "background"
+    ]
+  },
+  "device": "cuda"
+}

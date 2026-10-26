@@ -1,0 +1,9 @@
+  Session log → D:\Thesis Luka Bakar\BurnVision Project\outputs_coco\session_20260615_062043.log
+
+=================================================================
+  TRAINING SELESAI — SUMMARY
+=================================================================
+  unetpp_efficientb4        Dice = 0.5596  ████████████████
+
+  Best Model : unetpp_efficientb4  (Dice = 0.5596)
+  Results JSON → D:\Thesis Luka Bakar\BurnVision Project\outputs_coco/results_summary.json

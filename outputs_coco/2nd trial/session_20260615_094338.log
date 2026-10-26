@@ -1,0 +1,9 @@
+  Session log → D:\Thesis Luka Bakar\BurnVision Project\outputs_coco\session_20260615_094338.log
+
+=================================================================
+  TRAINING SELESAI — SUMMARY
+=================================================================
+  deeplabv3p_effb4          Dice = 0.5136  ███████████████
+
+  Best Model : deeplabv3p_effb4  (Dice = 0.5136)
+  Results JSON → D:\Thesis Luka Bakar\BurnVision Project\outputs_coco/results_summary.json

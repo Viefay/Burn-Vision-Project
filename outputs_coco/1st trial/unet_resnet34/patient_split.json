@@ -1,0 +1,29 @@
+{
+  "train_patients": [
+    "11Okt_MR",
+    "12Okt_Sam",
+    "14Okt_U",
+    "15Okt_DAEK",
+    "16Nov_S",
+    "17Des_FR",
+    "19Des_L",
+    "1Okt_AS",
+    "20Des_MD",
+    "21Okt_SHart",
+    "2Okt_AA",
+    "3Okt_AL",
+    "4Okt_CAU",
+    "5Okt_E",
+    "6Okt_EM",
+    "7Okt_H",
+    "8Okt_Mar"
+  ],
+  "val_patients": [
+    "10Okt_MRH",
+    "13Okt_SA",
+    "18Des_K",
+    "9Okt_Mas"
+  ],
+  "train_images": 162,
+  "val_images": 41
+}
